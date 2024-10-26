@@ -2,29 +2,44 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joaoleau/blob/config"
-	"github.com/joaoleau/blob/internal/controller/routes"
+	"github.com/joaoleau/blob/db"
+	"github.com/joaoleau/blob/repository"
+	"github.com/joaoleau/blob/controller"
+	"github.com/joaoleau/blob/usecases"
 	"github.com/joho/godotenv"
 )
 
-func init() {
-	config.LoadConfig()
-	config.ConnectToDB()
-}
-
 func main() {
-	err := godotenv.Load()
-
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
 	}
-	
-	g := gin.Default()
-	routes.InitRoutes(&g.RouterGroup)
-	
-	if err := g.Run(config.GetServerPort()); err != nil {
-		log.Fatal(err)
+
+	server := gin.Default()
+	dbConnection, err := db.ConnectDB()
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer dbConnection.Close()
+
+
+	userRepository := repository.NewAuthRepository(dbConnection)
+	userUseCase := usecases.NewAuthUseCase(userRepository)
+	userController := controller.NewUserontroller(userUseCase)
+
+	server.GET("/getUserById/:userId", userController.FindUserByID)
+	server.POST("/createUser", userController.CreateUser)
+	server.PUT("/updateUser/:userId", userController.UpdateUser)
+	server.DELETE("/deleteUser/:userId", userController.DeleteUser)
+
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	if err := server.Run(":" + port); err != nil {
+		log.Fatalf("Failed to run server: %v", err)
 	}
 }
