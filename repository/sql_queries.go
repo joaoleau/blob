@@ -22,26 +22,28 @@ const (
 					 FROM users 
 					 WHERE user_id = $1`
 
-	// getTotalCount = `SELECT COUNT(user_id) FROM users 
-	// 					WHERE nickname ILIKE '%' || $1 || '%'`
-
-	// findUsers = `SELECT user_id, nickname, email, phone_number,
-	//               created_at, updated_at, login_date 
-	// 			  FROM users 
-	// 			  WHERE nickname ILIKE '%' || $1 || '%'
-	// 			  ORDER BY nickname
-	// 			  OFFSET $2 LIMIT $3
-	// 			  `
-
-	// getTotal = `SELECT COUNT(user_id) FROM users`
-
-	// getUsers = `SELECT user_id, nickname, email, phone_number, 
-    //    			 created_at, updated_at, login_date
-	// 			 FROM users 
-	// 			 ORDER BY COALESCE(NULLIF($1, ''), nickname) OFFSET $2 LIMIT $3`
-
 	findUserByEmail = `SELECT user_id, nickname, email, phone_number, 
        			 		created_at, updated_at, login_date, password
 				 		FROM users 
 				 		WHERE email = $1`
+
+	getUsers = `SELECT user_id, nickname, email, phone_number, 
+       			 created_at, updated_at, login_date
+				 FROM users 
+				 ORDER BY COALESCE(NULLIF($1, ''), nickname) OFFSET $2 LIMIT $3`
+
+
+	getTotalCount = `SELECT COUNT(user_id) FROM users 
+						WHERE nickname ILIKE '%' || $1 || '%'`
+
+	findUsers = `SELECT user_id, nickname, email, phone_number,
+	              created_at, updated_at, login_date 
+				  FROM users 
+				  WHERE nickname ILIKE '%' || $1 || '%'
+				  ORDER BY nickname
+				  OFFSET $2 LIMIT $3
+				  `
+
+	getTotal = `SELECT COUNT(user_id) FROM users`
+
 )

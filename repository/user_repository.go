@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/joaoleau/blob/models"
+	"github.com/joaoleau/blob/utils"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 )
@@ -74,114 +75,114 @@ func (r *AuthRepo) GetByID(ctx context.Context, userID uuid.UUID) (*models.User,
 	span, ctx := opentracing.StartSpanFromContext(ctx, "AuthRepo.GetByID")
 	defer span.Finish()
 
-	user := &models.User{}
-	if err := r.db.QueryRowxContext(ctx, getUserQuery, userID).StructScan(user); err != nil {
+	foundUser := &models.User{}
+	if err := r.db.QueryRowxContext(ctx, getUserQuery, userID).StructScan(foundUser); err != nil {
 		return nil, errors.Wrap(err, "AuthRepo.GetByID.QueryRowxContext")
 	}
-	return user, nil
+	return foundUser, nil
 }
 
 
-func (r *AuthRepo) FindByEmail(ctx context.Context, user *models.User) (*models.User, error) {
+func (r *AuthRepo) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "AuthRepo.FindByEmail")
 	defer span.Finish()
 
 	foundUser := &models.User{}
-	if err := r.db.QueryRowxContext(ctx, findUserByEmail, user.Email).StructScan(foundUser); err != nil {
+	if err := r.db.QueryRowxContext(ctx, findUserByEmail, email).StructScan(foundUser); err != nil {
 		return nil, errors.Wrap(err, "AuthRepo.FindByEmail.QueryRowxContext")
 	}
 	return foundUser, nil
 }
 
 
-// func (r *AuthRepo) FindByName(ctx context.Context, name string, query *utils.PaginationQuery) (*models.UsersList, error) {
-// 	span, ctx := opentracing.StartSpanFromContext(ctx, "AuthRepo.FindByName")
-// 	defer span.Finish()
+func (r *AuthRepo) FindByName(ctx context.Context, name string, query *utils.PaginationQuery) (*models.UsersList, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "AuthRepo.FindByName")
+	defer span.Finish()
 
-// 	var totalCount int
-// 	if err := r.db.GetContext(ctx, &totalCount, getTotalCount, name); err != nil {
-// 		return nil, errors.Wrap(err, "AuthRepo.FindByName.GetContext.totalCount")
-// 	}
+	var totalCount int
+	if err := r.db.GetContext(ctx, &totalCount, getTotalCount, name); err != nil {
+		return nil, errors.Wrap(err, "AuthRepo.FindByName.GetContext.totalCount")
+	}
 
-// 	if totalCount == 0 {
-// 		return &models.UsersList{
-// 			TotalCount: totalCount,
-// 			TotalPages: utils.GetTotalPages(totalCount, query.GetSize()),
-// 			Page:       query.GetPage(),
-// 			Size:       query.GetSize(),
-// 			HasMore:    utils.GetHasMore(query.GetPage(), totalCount, query.GetSize()),
-// 			Users:      make([]*models.User, 0),
-// 		}, nil
-// 	}
+	if totalCount == 0 {
+		return &models.UsersList{
+			TotalCount: totalCount,
+			TotalPages: utils.GetTotalPages(totalCount, query.GetSize()),
+			Page:       query.GetPage(),
+			Size:       query.GetSize(),
+			HasMore:    utils.GetHasMore(query.GetPage(), totalCount, query.GetSize()),
+			Users:      make([]*models.User, 0),
+		}, nil
+	}
 
-// 	rows, err := r.db.QueryxContext(ctx, findUsers, name, query.GetOffset(), query.GetLimit())
-// 	if err != nil {
-// 		return nil, errors.Wrap(err, "AuthRepo.FindByName.QueryxContext")
-// 	}
-// 	defer rows.Close()
+	rows, err := r.db.QueryxContext(ctx, findUsers, name, query.GetOffset(), query.GetLimit())
+	if err != nil {
+		return nil, errors.Wrap(err, "AuthRepo.FindByName.QueryxContext")
+	}
+	defer rows.Close()
 
-// 	var users = make([]*models.User, 0, query.GetSize())
-// 	for rows.Next() {
-// 		var user models.User
-// 		if err = rows.StructScan(&user); err != nil {
-// 			return nil, errors.Wrap(err, "AuthRepo.FindByName.StructScan")
-// 		}
-// 		users = append(users, &user)
-// 	}
+	var users = make([]*models.User, 0, query.GetSize())
+	for rows.Next() {
+		var user models.User
+		if err = rows.StructScan(&user); err != nil {
+			return nil, errors.Wrap(err, "AuthRepo.FindByName.StructScan")
+		}
+		users = append(users, &user)
+	}
 
-// 	if err = rows.Err(); err != nil {
-// 		return nil, errors.Wrap(err, "AuthRepo.FindByName.rows.Err")
-// 	}
+	if err = rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "AuthRepo.FindByName.rows.Err")
+	}
 
-// 	return &models.UsersList{
-// 		TotalCount: totalCount,
-// 		TotalPages: utils.GetTotalPages(totalCount, query.GetSize()),
-// 		Page:       query.GetPage(),
-// 		Size:       query.GetSize(),
-// 		HasMore:    utils.GetHasMore(query.GetPage(), totalCount, query.GetSize()),
-// 		Users:      users,
-// 	}, nil
-// }
+	return &models.UsersList{
+		TotalCount: totalCount,
+		TotalPages: utils.GetTotalPages(totalCount, query.GetSize()),
+		Page:       query.GetPage(),
+		Size:       query.GetSize(),
+		HasMore:    utils.GetHasMore(query.GetPage(), totalCount, query.GetSize()),
+		Users:      users,
+	}, nil
+}
 
 
-// func (r *AuthRepo) GetUsers(ctx context.Context, pq *utils.PaginationQuery) (*models.UsersList, error) {
-// 	span, ctx := opentracing.StartSpanFromContext(ctx, "AuthRepo.GetUsers")
-// 	defer span.Finish()
+func (r *AuthRepo) GetUsers(ctx context.Context, pq *utils.PaginationQuery) (*models.UsersList, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "AuthRepo.GetUsers")
+	defer span.Finish()
 
-// 	var totalCount int
-// 	if err := r.db.GetContext(ctx, &totalCount, getTotal); err != nil {
-// 		return nil, errors.Wrap(err, "AuthRepo.GetUsers.GetContext.totalCount")
-// 	}
+	var totalCount int
+	if err := r.db.GetContext(ctx, &totalCount, getTotal); err != nil {
+		return nil, errors.Wrap(err, "AuthRepo.GetUsers.GetContext.totalCount")
+	}
 
-// 	if totalCount == 0 {
-// 		return &models.UsersList{
-// 			TotalCount: totalCount,
-// 			TotalPages: utils.GetTotalPages(totalCount, pq.GetSize()),
-// 			Page:       pq.GetPage(),
-// 			Size:       pq.GetSize(),
-// 			HasMore:    utils.GetHasMore(pq.GetPage(), totalCount, pq.GetSize()),
-// 			Users:      make([]*models.User, 0),
-// 		}, nil
-// 	}
+	if totalCount == 0 {
+		return &models.UsersList{
+			TotalCount: totalCount,
+			TotalPages: utils.GetTotalPages(totalCount, pq.GetSize()),
+			Page:       pq.GetPage(),
+			Size:       pq.GetSize(),
+			HasMore:    utils.GetHasMore(pq.GetPage(), totalCount, pq.GetSize()),
+			Users:      make([]*models.User, 0),
+		}, nil
+	}
 
-// 	var users = make([]*models.User, 0, pq.GetSize())
-// 	if err := r.db.SelectContext(
-// 		ctx,
-// 		&users,
-// 		getUsers,
-// 		pq.GetOrderBy(),
-// 		pq.GetOffset(),
-// 		pq.GetLimit(),
-// 	); err != nil {
-// 		return nil, errors.Wrap(err, "AuthRepo.GetUsers.SelectContext")
-// 	}
+	var users = make([]*models.User, 0, pq.GetSize())
+	if err := r.db.SelectContext(
+		ctx,
+		&users,
+		getUsers,
+		pq.GetOrderBy(),
+		pq.GetOffset(),
+		pq.GetLimit(),
+	); err != nil {
+		return nil, errors.Wrap(err, "AuthRepo.GetUsers.SelectContext")
+	}
 
-// 	return &models.UsersList{
-// 		TotalCount: totalCount,
-// 		TotalPages: utils.GetTotalPages(totalCount, pq.GetSize()),
-// 		Page:       pq.GetPage(),
-// 		Size:       pq.GetSize(),
-// 		HasMore:    utils.GetHasMore(pq.GetPage(), totalCount, pq.GetSize()),
-// 		Users:      users,
-// 	}, nil
-// }
+	return &models.UsersList{
+		TotalCount: totalCount,
+		TotalPages: utils.GetTotalPages(totalCount, pq.GetSize()),
+		Page:       pq.GetPage(),
+		Size:       pq.GetSize(),
+		HasMore:    utils.GetHasMore(pq.GetPage(), totalCount, pq.GetSize()),
+		Users:      users,
+	}, nil
+}

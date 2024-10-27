@@ -24,14 +24,18 @@ func main() {
 	}
 	defer dbConnection.Close()
 
-
+	//Arrumar um jeito de centralizar esses handlers
 	userRepository := repository.NewAuthRepository(dbConnection)
 	userUseCase := usecases.NewAuthUseCase(userRepository)
 	userController := controller.NewUserontroller(userUseCase)
 
+	
 	server.GET("/getUserById/:userId", userController.FindUserByID)
+	server.GET("/findUserByEmail/:email", userController.FindUserByEmail)
+	server.GET("/findByName/:nickname", userController.FindByName)
+	server.GET("/getUsers", userController.GetUsers)
 	server.POST("/createUser", userController.CreateUser)
-	server.PUT("/updateUser/:userId", userController.UpdateUser)
+	server.PATCH("/updateUser/:userId", userController.UpdateUser)
 	server.DELETE("/deleteUser/:userId", userController.DeleteUser)
 
 

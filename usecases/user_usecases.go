@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/joaoleau/blob/repository"
 	"github.com/joaoleau/blob/models"
+	"github.com/joaoleau/blob/utils"
 	"github.com/google/uuid"
 	"github.com/opentracing/opentracing-go"
 )
@@ -18,12 +19,12 @@ func NewAuthUseCase(repo repository.AuthRepo) AuthUseCase {
 	}
 }
 
-// Create new user
+
 func (u *AuthUseCase) Register(ctx context.Context, user *models.User) (*models.User, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "AuthUseCase.Register")
 	defer span.Finish()
 
-	existsUser, err := u.repository.FindByEmail(ctx, user)
+	existsUser, err := u.repository.FindByEmail(ctx, user.Email)
 	if existsUser != nil || err == nil {
 		return nil, err
 	}
@@ -42,7 +43,6 @@ func (u *AuthUseCase) Register(ctx context.Context, user *models.User) (*models.
 }
 
 
-// Update existing user
 func (u *AuthUseCase) Update(ctx context.Context, user *models.User) (*models.User, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "AuthUseCase.Update")
 	defer span.Finish()
@@ -62,7 +62,7 @@ func (u *AuthUseCase) Update(ctx context.Context, user *models.User) (*models.Us
 }
 
 
-// Delete new user
+
 func (u *AuthUseCase) Delete(ctx context.Context, userID uuid.UUID) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "AuthUseCase.Delete")
 	defer span.Finish()
@@ -75,7 +75,6 @@ func (u *AuthUseCase) Delete(ctx context.Context, userID uuid.UUID) error {
 }
 
 
-// Get user by id
 func (u *AuthUseCase) GetByID(ctx context.Context, userID uuid.UUID) (*models.User, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "AuthUseCase.GetByID")
 	defer span.Finish()
@@ -88,4 +87,35 @@ func (u *AuthUseCase) GetByID(ctx context.Context, userID uuid.UUID) (*models.Us
 	user.SanitizePassword()
 
 	return user, nil
+}
+
+
+func (u *AuthUseCase) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "AuthUseCase.GetByEmail")
+	defer span.Finish()
+
+	user, err := u.repository.FindByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+
+	user.SanitizePassword()
+
+	return user, nil
+}
+
+
+func (u *AuthUseCase) FindByName(ctx context.Context, name string, query *utils.PaginationQuery) (*models.UsersList, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "AuthUseCase.FindByName")
+	defer span.Finish()
+
+	return u.repository.FindByName(ctx, name, query)
+}
+
+
+func (u *AuthUseCase) GetUsers(ctx context.Context, pq *utils.PaginationQuery) (*models.UsersList, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "AuthUseCase.GetUsers")
+	defer span.Finish()
+
+	return u.repository.GetUsers(ctx, pq)
 }
