@@ -1,49 +1,29 @@
 package repository
 
 const (
-	createUserQuery = `INSERT INTO users (nickname, email, password, phone_number,
-	               		created_at, updated_at, login_date)
-						VALUES ($1, $2, $3, $4, now(), now(), now()) 
-						RETURNING *`
+	createBlobQuery = `INSERT INTO blobs (blob_id, user_id, description, title, created_at, updated_at)
+					   VALUES ($1, $2, $3, $4, now(), now())
+					   RETURNING *`
 
-	updateUserQuery = `UPDATE users
-						SET nickname = COALESCE(NULLIF($1, ''), nickname),
-						    email = COALESCE(NULLIF($2, ''), email),
-						    phone_number = COALESCE(NULLIF($3, ''), phone_number),
-						    updated_at = now()
-						WHERE user_id = $4
-						RETURNING *
-						`
+	updateBlobQuery = `UPDATE blobs
+					   SET description = COALESCE(NULLIF($1, ''), description),
+						   title = COALESCE(NULLIF($2, ''), title),
+						   updated_at = now()
+					   WHERE blob_id = $3
+					   RETURNING *`
 
-	deleteUserQuery = `DELETE FROM users WHERE user_id = $1`
+	getBlobByIDQuery = `SELECT blob_id, user_id, description, title, created_at, updated_at
+					    FROM blobs
+					    WHERE blob_id = $1`
 
-	getUserQuery = `SELECT user_id, nickname, email, phone_number, 
-       				 created_at, updated_at, login_date  
-					 FROM users 
-					 WHERE user_id = $1`
+	listBlobsQuery = `SELECT blob_id, user_id, description, title, created_at, updated_at
+					  FROM blobs
+					  ORDER BY created_at DESC
+					  LIMIT $1 OFFSET $2`
 
-	findUserByEmail = `SELECT user_id, nickname, email, phone_number, 
-       			 		created_at, updated_at, login_date, password
-				 		FROM users 
-				 		WHERE email = $1`
+	deleteBlobQuery = `DELETE FROM blobs
+					   WHERE blob_id = $1
+					   RETURNING blob_id`
 
-	getUsers = `SELECT user_id, nickname, email, phone_number, 
-       			 created_at, updated_at, login_date
-				 FROM users 
-				 ORDER BY COALESCE(NULLIF($1, ''), nickname) OFFSET $2 LIMIT $3`
-
-
-	getTotalCount = `SELECT COUNT(user_id) FROM users 
-						WHERE nickname ILIKE '%' || $1 || '%'`
-
-	findUsers = `SELECT user_id, nickname, email, phone_number,
-	              created_at, updated_at, login_date 
-				  FROM users 
-				  WHERE nickname ILIKE '%' || $1 || '%'
-				  ORDER BY nickname
-				  OFFSET $2 LIMIT $3
-				  `
-
-	getTotal = `SELECT COUNT(user_id) FROM users`
-
+	getTotalBlob = `SELECT COUNT(blob_id) FROM blob`
 )
