@@ -1,0 +1,16 @@
+FROM golang:1.23.5-bullseye AS builder
+WORKDIR /app
+
+COPY blob-backend/go.mod blob-backend/go.sum .
+RUN go mod download
+
+COPY blob-backend/ ./blob-backend/
+
+WORKDIR /app/blob-backend/cmd/api
+
+RUN CGO_ENABLED=0 go build -o main
+
+FROM scratch
+EXPOSE 80
+COPY --from=builder /app/blob-backend/cmd/api/main /go/main
+CMD ["/go/main"]

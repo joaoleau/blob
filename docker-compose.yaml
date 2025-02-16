@@ -1,0 +1,55 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:17.2-alpine3.21
+    container_name: postgres-db
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  backend:
+    image: leeegiit/blob-backend:latest
+    container_name: blob-backend
+    environment:
+      DB_HOST: "db"
+      DB_PORT: 5432
+      DB_USER: "postgres"
+      DB_PASSWD: "postgres"
+      DB_DATABASE: "blob"
+    ports:
+      - "3333:80"
+    depends_on:
+      - db
+      - runner
+
+  pop:
+    image: leeegiit/pop-blob-cronjob:latest
+    container_name: pop-blob-cronjob
+    environment:
+      DB_HOST: "db"
+      DB_PORT: 5432
+      DB_USER: "postgres"
+      DB_PASSWD: "postgres"
+      DB_DATABASE: "blob"
+    depends_on:
+      - db
+      - runner
+
+  runner:
+    image: leeegiit/runner-migrations-blob:latest
+    container_name: runner-migrations-blob
+    environment:
+      DB_HOST: "db"
+      DB_PORT: 5432
+      DB_USER: "postgres"
+      DB_PASSWD: "postgres"
+      DB_DATABASE: "blob"
+    depends_on:
+      - db
+
+volumes:
+  db_data:
