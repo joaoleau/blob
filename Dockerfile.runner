@@ -1,0 +1,15 @@
+FROM golang:1.23.5-bullseye AS builder
+WORKDIR /app
+
+COPY runner-migrations-blob/go.mod runner-migrations-blob/go.sum .
+RUN go mod download
+
+COPY runner-migrations-blob/ ./runner-migrations-blob/
+
+WORKDIR /app/runner-migrations-blob/
+
+RUN CGO_ENABLED=0 go build -o main
+
+FROM scratch
+COPY --from=builder /app/runner-migrations-blob/main /go/main
+CMD ["/go/main"]

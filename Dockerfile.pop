@@ -1,0 +1,26 @@
+FROM golang:1.23.5-bullseye AS builder
+WORKDIR /app
+
+COPY pop-blob-cronjob/go.mod pop-blob-cronjob/go.sum . 
+RUN go mod download
+
+COPY pop-blob-cronjob/ ./pop-blob-cronjob/
+
+WORKDIR /app/pop-blob-cronjob/
+
+RUN chmod +x entrypoint.sh
+
+RUN CGO_ENABLED=0 go build -o main
+
+FROM alpine:latest
+RUN apk add --no-cache bash
+RUN adduser -D user
+
+COPY --from=builder /app/pop-blob-cronjob/main /go/main
+COPY --from=builder /app/pop-blob-cronjob/entrypoint.sh /go/entrypoint.sh
+
+RUN chmod +x /go/entrypoint.sh
+RUN chmod -R +x /go
+USER user
+
+CMD ["/go/entrypoint.sh"]
