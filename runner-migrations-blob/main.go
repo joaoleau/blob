@@ -126,38 +126,6 @@ const (
 		LEFT JOIN "Interest" i ON bi.interest_id = i.id
 		LEFT JOIN "User" u ON b.user_id = u.id
 		ORDER BY b.created_at DESC`
-
-	createCheckProfanity = `
-		CREATE OR REPLACE FUNCTION check_profanity()
-		RETURNS TRIGGER AS $$
-		DECLARE
-			banned_words TEXT[] := ARRAY['merda', 'porra', 'caralho', 'puta', 'foda', 'bosta', 'desgraça', 'cacete'];
-			word TEXT;
-		BEGIN
-			FOREACH word IN ARRAY banned_words LOOP
-				IF NEW.content ILIKE '%' || word || '%' THEN
-					RAISE EXCEPTION 'Conteúdo proibido detectado';
-				END IF;
-			END LOOP;
-			RETURN NEW;
-		END;
-		$$ LANGUAGE plpgsql;
-	`
-
-	createCheckBlobContentTrigger = `
-		CREATE TRIGGER check_blob_content
-		BEFORE INSERT OR UPDATE ON "Blob"
-		FOR EACH ROW
-		EXECUTE FUNCTION check_profanity();
-	`
-
-	createCheckCommentContentTrigger = `
-		CREATE TRIGGER check_comment_content
-		BEFORE INSERT OR UPDATE ON "Comment"
-		FOR EACH ROW
-		EXECUTE FUNCTION check_profanity();
-	`
-
 )
 
 func runningQueries(db *sqlx.DB, ctx context.Context) {
@@ -199,15 +167,6 @@ func runningQueries(db *sqlx.DB, ctx context.Context) {
 
 	if _, err := dbConnection.ExecContext(ctx, popBlobs); err != nil {
 		log.Fatalf("Failed to create delete_old_blobs function: %v", err)
-	}
-	if _, err := dbConnection.ExecContext(ctx, createCheckProfanity); err != nil {
-		log.Fatalf("Failed to create createCheckProfanity function: %v", err)
-	}
-	if _, err := dbConnection.ExecContext(ctx, createCheckBlobContentTrigger); err != nil {
-		log.Fatalf("Failed to create createCheckBlobContentTrigger trigger: %v", err)
-	}
-	if _, err := dbConnection.ExecContext(ctx, createCheckCommentContentTrigger); err != nil {
-		log.Fatalf("Failed to create createCheckCommentContentTrigger trigger: %v", err)
 	}
 	if _, err := dbConnection.ExecContext(ctx, createViewListBlob); err != nil {
 		log.Fatalf("Failed to create createViewListBlob view: %v", err)
